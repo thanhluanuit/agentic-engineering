@@ -1,25 +1,65 @@
 # agent-skills
 
-AI agent skills for software engineering workflows.
+AI agent skills and rules for software engineering workflows.
 
-A skill is a self-contained package (instructions + scripts + data) that an
+A **skill** is a self-contained package (instructions + scripts + data) that an
 agent like Claude Code discovers and runs on demand. Drop one into a project and
 the agent knows *when* to use it and *how* to run it.
+
+A **rule** is a markdown instruction file the agent reads automatically — either
+every session or only when it opens a matching file — to keep coding conventions
+consistent without being asked.
 
 ## Structure
 
 ```
 agent-skills/
+├── CLAUDE.md                           # project instructions, loaded every session
 └── .claude/
+    ├── rules/                          # Rails engineering rules (auto-loaded)
+    │   ├── principles.md               # always-on
+    │   ├── technical_stack.md          # always-on (per-project template)
+    │   ├── code_style.md               # loads on Ruby/Rails/frontend files
+    │   ├── performance.md              # loads on models, jobs, migrations
+    │   └── security.md                 # loads on app/config/db code
     └── skills/
-        ├── owasp-asvs-security   # audit code against OWASP ASVS 4.0.3
-        └── skill-creator         # scaffold, evaluate, and optimize new skills
+        ├── owasp-asvs-security         # audit code against OWASP ASVS 4.0.3
+        └── skill-creator               # scaffold, evaluate, and optimize new skills
 ```
 
-| Skill | What it does                                                                                                                                   |
-|---|------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`owasp-asvs-security`](.claude/skills/owasp-asvs-security) | Audits your code against OWASP ASVS 4.0.3 (Level 2) and produces evidence-backed findings plus a rollup — without changing the code it audits. |
-| [`skill-creator`](.claude/skills/skill-creator) | Helps you build, refine, and benchmark new skills.                                                                                             |
+| Skill | What it does |
+|---|---|
+| [`owasp‑asvs‑security`](.claude/skills/owasp-asvs-security) | Audits your code against OWASP ASVS 4.0.3 (Level 2), citing evidence for every finding. |
+| [`skill-creator`](.claude/skills/skill-creator) | Scaffolds, refines, and optimizes skills, with evals to benchmark what works. |
+
+
+---
+
+## Rules
+
+The [`.claude/rules/`](.claude/rules/) directory holds engineering conventions
+that apply to every Rails project. They follow
+[Claude Code's rules mechanism](https://code.claude.com/docs/en/memory): the
+agent loads them into context on its own, so your code stays consistent without
+you restating the standards each session. **Always-on** rules load every session
+as baseline context; **path-scoped** rules carry `paths:` frontmatter and load
+only when the agent opens a matching file, so they cost nothing until relevant.
+
+| Rule | Loads | Covers |
+|---|---|---|
+| [`principles.md`](.claude/rules/principles.md) | Always-on | Core engineering values — the Rails Way, small reversible changes, fail loudly. Wins when a style rule conflicts. |
+| [`technical_stack.md`](.claude/rules/technical_stack.md) | Always-on | Per-project stack template (Ruby/Rails versions, DB, jobs, frontend) to fill in and keep current. |
+| [`code_style.md`](.claude/rules/code_style.md) | `*.rb`, `*.erb`, `app/**` | Ruby + Rails + frontend style; the conventions RuboCop and ERB Lint can't enforce on their own. |
+| [`performance.md`](.claude/rules/performance.md) | models, jobs, migrations | N+1 queries, indexing, caching, background jobs, and safe migrations on live databases. |
+| [`security.md`](.claude/rules/security.md) | `app/**`, `config/**`, `db/**` | Everyday secure-coding baseline; points to `owasp-asvs-security` for the periodic deep audit. |
+
+Rules are guidance the agent *reads*, not configuration it *enforces*. For
+guaranteed behavior use [hooks](https://code.claude.com/docs/en/hooks) or
+[permissions](https://code.claude.com/docs/en/permissions).
+
+**Using them in your own project** — copy `.claude/rules/` (and optionally
+`CLAUDE.md`) into any Rails repo, then fill in `technical_stack.md`. The agent
+picks them up automatically on the next session.
 
 
 ---
