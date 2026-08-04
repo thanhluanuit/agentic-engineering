@@ -31,9 +31,9 @@ agentic-engineering/
 | Skill | What it does |
 |---|---|
 | [`owasp‑asvs‑security`](.claude/skills/owasp-asvs-security) | Audits your code against OWASP ASVS 4.0.3 (Level 2), citing evidence for every finding. |
-| [`owasp-top-10-reviewer`](.claude/skills/owasp-top-10-reviewer) | Reviews a GitHub PR or a whole Rails repo against OWASP Top 10:2025 — Brakeman + bundler-audit signal, confirmed in code, plus the inspection pass tools can't do. |
-| [`performance-auditor`](.claude/skills/performance-auditor) | Reviews a Rails + PostgreSQL codebase or PR for performance problems — N+1s, missing indexes, caching, jobs, scaling limits. Measures before it prescribes; every finding ships with a way to verify the win. |
-| [`skill-creator`](.claude/skills/skill-creator) | Scaffolds, refines, and optimizes skills, with evals to benchmark what works. |
+| [`owasp‑top‑10‑reviewer`](.claude/skills/owasp-top-10-reviewer) | Reviews a GitHub PR or a whole Rails repo against OWASP Top 10:2025 — Brakeman + bundler-audit signal, confirmed in code, plus the inspection pass tools can't do. |
+| [`performance‑auditor`](.claude/skills/performance-auditor) | Reviews a Rails + PostgreSQL codebase or PR for performance problems — N+1s, missing indexes, caching, jobs, scaling limits. Measures before it prescribes; every finding ships with a way to verify the win. |
+| [`skill‑creator`](.claude/skills/skill-creator) | Scaffolds, refines, and optimizes skills, with evals to benchmark what works. |
 
 Each skill except `skill-creator` ships its own README with the full workflow,
 outputs, and requirements.
