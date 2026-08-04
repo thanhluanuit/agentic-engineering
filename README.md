@@ -1,4 +1,4 @@
-# agent-skills
+# agentic-engineering
 
 AI agent skills and rules for software engineering workflows.
 
@@ -13,8 +13,7 @@ consistent without being asked.
 ## Structure
 
 ```
-agent-skills/
-├── CLAUDE.md                           # project instructions, loaded every session
+agentic-engineering/
 └── .claude/
     ├── rules/                          # Rails engineering rules (auto-loaded)
     │   ├── principles.md               # always-on
@@ -24,13 +23,20 @@ agent-skills/
     │   └── security.md                 # loads on app/config/db code
     └── skills/
         ├── owasp-asvs-security         # audit code against OWASP ASVS 4.0.3
+        ├── owasp-top-10-reviewer       # review code against OWASP Top 10:2025
+        ├── performance-auditor         # find N+1s, missing indexes, and scaling limits
         └── skill-creator               # scaffold, evaluate, and optimize new skills
 ```
 
 | Skill | What it does |
 |---|---|
 | [`owasp‑asvs‑security`](.claude/skills/owasp-asvs-security) | Audits your code against OWASP ASVS 4.0.3 (Level 2), citing evidence for every finding. |
+| [`owasp-top-10-reviewer`](.claude/skills/owasp-top-10-reviewer) | Reviews a GitHub PR or a whole Rails repo against OWASP Top 10:2025 — Brakeman + bundler-audit signal, confirmed in code, plus the inspection pass tools can't do. |
+| [`performance-auditor`](.claude/skills/performance-auditor) | Reviews a Rails + PostgreSQL codebase or PR for performance problems — N+1s, missing indexes, caching, jobs, scaling limits. Measures before it prescribes; every finding ships with a way to verify the win. |
 | [`skill-creator`](.claude/skills/skill-creator) | Scaffolds, refines, and optimizes skills, with evals to benchmark what works. |
+
+Each skill except `skill-creator` ships its own README with the full workflow,
+outputs, and requirements.
 
 
 ---
@@ -57,9 +63,9 @@ Rules are guidance the agent *reads*, not configuration it *enforces*. For
 guaranteed behavior use [hooks](https://code.claude.com/docs/en/hooks) or
 [permissions](https://code.claude.com/docs/en/permissions).
 
-**Using them in your own project** — copy `.claude/rules/` (and optionally
-`CLAUDE.md`) into any Rails repo, then fill in `technical_stack.md`. The agent
-picks them up automatically on the next session.
+**Using them in your own project** — copy `.claude/rules/` into any Rails repo,
+then fill in `technical_stack.md`. The agent picks them up automatically on the
+next session.
 
 
 ---
@@ -128,3 +134,65 @@ those checks are skipped and the audit continues via code inspection; the HTTP
 [skill README](.claude/skills/owasp-asvs-security/README.md) for retargeting.
 
 > ASVS requirement text © OWASP Foundation, licensed CC BY-SA 3.0.
+
+
+---
+
+## owasp-top-10-reviewer
+
+Read-only security review against **OWASP Top 10:2025** — the routine pass at
+review time, where ASVS is the periodic deep sweep.
+
+**Modes** — auto-selected from the input.
+
+| Mode | Give it | You get |
+|---|---|---|
+| PR | a GitHub PR URL | inline comments + summary on the PR; changes requested on any Critical/High |
+| Repo | a repo or directory | `owasp-review-<date>.md` |
+
+**How it works** — three passes:
+
+1. **Static** — Brakeman + bundler-audit, mapped to the 2025 categories.
+2. **Inspection** — what tools can't see: missing authorization, IDOR, insecure
+   design, auth logic flaws, unverified webhooks, fail-open rescues.
+3. **Consolidate** — one category per finding, severity as exploitability ×
+   impact.
+
+Every tool signal is confirmed in the code before it's reported.
+
+**Requirements** — a Rails project and Python 3. Brakeman + bundler-audit
+recommended (`gem install brakeman bundler-audit`); without them it runs
+inspection-only. PR mode needs the GitHub MCP server, plus a local checkout of
+the branch to run the static tools.
+
+See the [README](.claude/skills/owasp-top-10-reviewer/README.md).
+
+
+---
+
+## performance-auditor
+
+Performance-only review of a **Rails/ActiveRecord + PostgreSQL** codebase —
+scoped so it doesn't collide with a code or security review.
+
+**Measure-first** — locate the bottleneck before prescribing a fix. Static hits
+are hypotheses ranked by likely impact, not verdicts; a finding whose reach is
+unknown is marked `needs-measurement` instead of a confident Critical.
+
+**Modes**
+
+| Mode | For | What it does |
+|---|---|---|
+| Review changes | a PR, diff, or branch | flags only what *this change* introduces or worsens |
+| Audit codebase | a full sweep | seven categories in impact-per-effort order (`N+1 → Index → Caching → Jobs → Memory → Views → System`); checkpointed, so it resumes and diffs against the last run |
+| Diagnose | one slow path | reproduce → isolate → identify → fix → verify → guard |
+
+**Every finding carries eight fields** — `category · location · pattern · impact
+· severity · confidence · fix · verify`. `checkpoint.py` rejects one that's
+missing any of them: a finding without `verify` is a claim nobody can check.
+
+**Requirements** — Python 3; ripgrep recommended (falls back to `grep`);
+ideally a `pg_stat_statements` CSV export from production, which outranks any
+grep. Output lands under `performance-review-report/` in the target repo.
+
+See the [README](.claude/skills/performance-auditor/README.md).
