@@ -3,52 +3,59 @@
 The non-negotiable engineering values for every Rails project. When a specific
 style rule and a principle conflict, the principle wins.
 
-## The Rails Way first
+## Convention over Configuration
 
-- Prefer built-in Rails idioms over custom abstractions. Reach for a gem or a
-  service object only when the framework genuinely doesn't cover the case.
-- Convention over configuration. Follow Rails' naming and directory conventions
-  so the code is predictable to any Rails developer.
+- Follow Rails' naming and directory conventions exactly — models singular
+  (`User`), tables plural (`users`), controllers plural (`UsersController`).
+  Rails infers behavior from these; breaking them trades predictability for
+  nothing.
+- Prefer built-in Rails idioms (validations, associations, scopes, ActiveJob,
+  ActionMailer, Active Storage) over hand-rolled infrastructure. Reach for a
+  gem or a custom abstraction only when Rails genuinely doesn't cover the case.
+- If you must override a Rails default, leave a one-line comment saying why —
+  an unexplained override reads as an oversight to the next person who finds it.
 
-## Fat models, skinny controllers — but not obese models
+## DRY — but not at the cost of the wrong abstraction
 
-- Controllers orchestrate: authenticate, authorize, call one domain method,
-  render. No business logic.
-- Push behavior into models, but when a model grows past its single
-  responsibility, extract concerns, POROs, or service objects — don't let it
-  become a god object.
-- Views contain no logic beyond presentation. Use helpers, presenters, or
-  ViewComponents.
+- DRY is about knowledge, not text. Two blocks that look similar but encode
+  different business rules are not duplication — don't force them into one
+  shared method just because they're syntactically close.
+- Extract only after a pattern proves itself: duplicate twice before
+  abstracting on the third occurrence. An abstraction built on the wrong
+  generalization is more expensive to unwind than the duplication it avoided.
+- Once duplication is proven, push it into the layer it belongs to: shared
+  query logic into named scopes, shared view logic into helpers, partials, or
+  ViewComponents, shared behavior into concerns, POROs, or service objects.
 
-## Explicit over clever
+## SOLID — in Rails terms
 
-- Optimize for the reader. Code is read far more than it's written.
-- Name things for intent, not implementation. A method name should let a reader
-  skip its body.
-- Avoid metaprogramming unless it removes real, repeated boilerplate and stays
-  greppable.
+Ruby is dynamically typed and duck-typed, and Rails favors pragmatic OOP over
+enterprise design patterns — don't reach for interfaces, abstract classes, or
+DI containers Ruby doesn't need. Applied here, SOLID means:
 
-## Small, reversible changes
-
-- Prefer many small PRs over one large one. Each PR does one thing.
-- Every change is covered by a test that would fail without it.
-- Migrations are reversible (`change` or paired `up`/`down`) and safe to run on
-  a live database (see [`performance.md`](performance.md)).
-
-## Fail loudly, recover deliberately
-
-- Don't rescue `Exception` or swallow errors. Rescue the narrowest class you can
-  handle, and let the rest surface to error tracking.
-- Validate at the boundary (params, model validations, DB constraints) rather
-  than trusting callers.
+- **Single responsibility** — fat models, skinny controllers, but not obese
+  models. Controllers orchestrate: authenticate, authorize, call one domain
+  method, render — no business logic. When a model outgrows one
+  responsibility, extract a concern, PORO, or service object rather than
+  letting it become a god object.
+- **Open/closed** — extend behavior through Rails' own seams (concerns, STI,
+  polymorphic associations, decorators) instead of monkey-patching the
+  framework or a gem to change its behavior.
+- **Liskov substitution** — STI subclasses and duck-typed collaborators (e.g.
+  interchangeable notifier or payment-gateway classes) must be swappable
+  without the caller branching on `is_a?` or `class ==`. A caller that
+  type-checks its collaborators is telling you the abstraction is wrong.
+- **Interface segregation** — keep concerns and modules narrow and
+  single-purpose rather than one god-module mixed into everything. Don't force
+  a class to carry methods it doesn't need for the caller's use case.
+- **Dependency inversion** — for anything crossing a real boundary (external
+  APIs, payment providers, third-party services), let the collaborator be
+  passed in; a keyword argument with a sensible default is usually enough.
+  Don't hardcode `ExternalApi.new` deep inside a model. Skip this for
+  Rails-internal collaborators (ActiveRecord, ActiveJob) — inverting those is
+  needless ceremony.
 
 ## Security and correctness are not optional
 
-- Never trade a security control for convenience. See [`security.md`](security.md).
-- Data integrity lives in the database (foreign keys, `NOT NULL`, unique
-  indexes), not only in model validations.
-
-## Leave it better
-
-- Boy-scout rule: touch a file, tidy what you reasonably can within the PR's
-  scope — without turning a bugfix into a refactor.
+Never trade a security control or a correctness guarantee for convenience —
+see [`security.md`](security.md) for the specifics.

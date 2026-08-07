@@ -19,8 +19,9 @@ agentic-engineering/
     │   ├── principles.md               # always-on
     │   ├── technical_stack.md          # always-on (per-project template)
     │   ├── code_style.md               # loads on Ruby/Rails/frontend files
-    │   ├── performance.md              # loads on models, jobs, migrations
-    │   └── security.md                 # loads on app/config/db code
+    │   ├── performance.md              # loads on Ruby files, views, config
+    │   ├── security.md                 # loads on app/config/db code
+    │   └── testing.md                  # loads on spec/test files
     └── skills/
         ├── owasp-asvs-security         # audit code against OWASP ASVS 4.0.3
         ├── owasp-top-10-reviewer       # review code against OWASP Top 10:2025
@@ -53,11 +54,12 @@ only when the agent opens a matching file, so they cost nothing until relevant.
 
 | Rule | Loads | Covers |
 |---|---|---|
-| [`principles.md`](.claude/rules/principles.md) | Always-on | Core engineering values — the Rails Way, small reversible changes, fail loudly. Wins when a style rule conflicts. |
+| [`principles.md`](.claude/rules/principles.md) | Always-on | Core engineering values — Convention over Configuration, DRY, and SOLID applied in Rails terms. Wins when a style rule conflicts. |
 | [`technical_stack.md`](.claude/rules/technical_stack.md) | Always-on | Per-project stack template (Ruby/Rails versions, DB, jobs, frontend) to fill in and keep current. |
-| [`code_style.md`](.claude/rules/code_style.md) | `*.rb`, `*.erb`, `app/**` | Ruby + Rails + frontend style; the conventions RuboCop and ERB Lint can't enforce on their own. |
-| [`performance.md`](.claude/rules/performance.md) | models, jobs, migrations | N+1 queries, indexing, caching, background jobs, and safe migrations on live databases. |
+| [`code_style.md`](.claude/rules/code_style.md) | `*.rb`, `*.erb`, `app/**`, `lib/**`, `config/**` | Ruby + Rails + frontend style; the conventions RuboCop and ERB Lint can't enforce on their own. |
+| [`performance.md`](.claude/rules/performance.md) | Ruby files, views, config | N+1 queries, indexing, caching, background jobs, and safe migrations on live databases. |
 | [`security.md`](.claude/rules/security.md) | `app/**`, `config/**`, `db/**` | Everyday secure-coding baseline; points to `owasp-asvs-security` for the periodic deep audit. |
+| [`testing.md`](.claude/rules/testing.md) | `spec/**`, `test/**` | RSpec/Minitest conventions — test types, factories, isolation, flaky-test hygiene. |
 
 Rules are guidance the agent *reads*, not configuration it *enforces*. For
 guaranteed behavior use [hooks](https://code.claude.com/docs/en/hooks) or
