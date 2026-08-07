@@ -1,32 +1,40 @@
 # agentic-engineering
 
-AI agent skills and rules for software engineering workflows.
+AI agent skills and rules for engineering workflows — reusable across
+**Claude Code** and **Devin**.
 
 A **skill** is a self-contained package (instructions + scripts + data) that an
 agent like Claude Code discovers and runs on demand. Drop one into a project and
-the agent knows *when* to use it and *how* to run it.
+the agent knows *when* to use it and *how* to run it. Devin uses the same
+auto-discovery mechanism against a `.devin/` mirror of `.claude/` — see
+[Multi-agent support](#multi-agent-support) below.
 
 A **rule** is a markdown instruction file the agent reads automatically — either
 every session or only when it opens a matching file — to keep coding conventions
-consistent without being asked.
+consistent without being asked. Rule *content* is agent-neutral; only the
+auto-loading is Claude-specific.
 
 ## Structure
 
 ```
 agentic-engineering/
-└── .claude/
-    ├── rules/                          # Rails engineering rules (auto-loaded)
-    │   ├── principles.md               # always-on
-    │   ├── technical_stack.md          # always-on (per-project template)
-    │   ├── code_style.md               # loads on Ruby/Rails/frontend files
-    │   ├── performance.md              # loads on Ruby files, views, config
-    │   ├── security.md                 # loads on app/config/db code
-    │   └── testing.md                  # loads on spec/test files
-    └── skills/
-        ├── owasp-asvs-security         # audit code against OWASP ASVS 4.0.3
-        ├── owasp-top-10-reviewer       # review code against OWASP Top 10:2025
-        ├── performance-auditor         # find N+1s, missing indexes, and scaling limits
-        └── skill-creator               # scaffold, evaluate, and optimize new skills
+├── .claude/
+│   ├── rules/                          # Rails engineering rules (single source of truth)
+│   │   ├── principles.md               # always-on
+│   │   ├── technical_stack.md          # always-on (per-project template)
+│   │   ├── code_style.md               # loads on Ruby/Rails/frontend files
+│   │   ├── performance.md              # loads on Ruby files, views, config
+│   │   ├── security.md                 # loads on app/config/db code
+│   │   └── testing.md                  # loads on spec/test files
+│   └── skills/                         # Claude Code
+│       ├── owasp-asvs-security         # audit code against OWASP ASVS 4.0.3
+│       ├── owasp-top-10-reviewer       # review code against OWASP Top 10:2025
+│       ├── performance-auditor         # find N+1s, missing indexes, and scaling limits
+│       ├── code-reviewer                # correctness + reuse/simplification review of a PR or diff
+│       └── skill-creator               # scaffold, evaluate, and optimize new skills
+└── .devin/                             # mirrors .claude/ — same rules/, same skills/
+    ├── rules/                          # identical content to .claude/rules/
+    └── skills/                         # identical content to .claude/skills/
 ```
 
 | Skill | What it does |
@@ -34,11 +42,28 @@ agentic-engineering/
 | [`owasp‑asvs‑security`](.claude/skills/owasp-asvs-security) | Audits your code against OWASP ASVS 4.0.3 (Level 2), citing evidence for every finding. |
 | [`owasp‑top‑10‑reviewer`](.claude/skills/owasp-top-10-reviewer) | Reviews a GitHub PR or a whole Rails repo against OWASP Top 10:2025 — Brakeman + bundler-audit signal, confirmed in code, plus the inspection pass tools can't do. |
 | [`performance‑auditor`](.claude/skills/performance-auditor) | Reviews a Rails + PostgreSQL codebase or PR for performance problems — N+1s, missing indexes, caching, jobs, scaling limits. Measures before it prescribes; every finding ships with a way to verify the win. |
+| [`code‑reviewer`](.claude/skills/code-reviewer) | Reviews a PR or diff for correctness bugs and reuse/simplification/efficiency cleanups, checked against the repo's own rules. Effort levels + optional inline PR comments or applied fixes; read-only unless asked. |
 | [`skill‑creator`](.claude/skills/skill-creator) | Scaffolds, refines, and optimizes skills, with evals to benchmark what works. |
 
-Each skill except `skill-creator` ships its own README with the full workflow,
-outputs, and requirements.
 
+---
+
+## Multi-agent support
+
+This template isn't Claude Code-only. `.claude/rules/*.md` is the single,
+agent-neutral source of truth for engineering conventions; how each agent
+consumes it differs:
+
+| Agent | Entry point | Notes |
+|---|---|---|
+| **Claude Code** | `.claude/rules/`, `.claude/skills/` | Native — rules auto-load by path, skills auto-trigger by description. |
+| **Devin** | `.devin/rules/`, `.devin/skills/` | Native — same structure and auto-discovery mechanism as Claude Code, mirrored under `.devin/`. |
+
+Windsurf is not supported.
+
+**Using this with Devin** — copy `.devin/rules/` and `.devin/skills/` into
+your project (same as the Claude Code flow below), then fill in
+`technical_stack.md`.
 
 ---
 
@@ -48,7 +73,9 @@ The [`.claude/rules/`](.claude/rules/) directory holds engineering conventions
 that apply to every Rails project. They follow
 [Claude Code's rules mechanism](https://code.claude.com/docs/en/memory): the
 agent loads them into context on its own, so your code stays consistent without
-you restating the standards each session. **Always-on** rules load every session
+you restating the standards each session.
+
+**Always-on** rules load every session
 as baseline context; **path-scoped** rules carry `paths:` frontmatter and load
 only when the agent opens a matching file, so they cost nothing until relevant.
 
@@ -198,3 +225,35 @@ ideally a `pg_stat_statements` CSV export from production, which outranks any
 grep. Output lands under `performance-review-report/` in the target repo.
 
 See the [README](.claude/skills/performance-auditor/README.md).
+
+
+---
+
+## code-reviewer
+
+General code-quality review of a **PR or diff** — correctness bugs and
+reuse/simplification/efficiency cleanups, checked against the target repo's
+own `.claude/rules/*.md` rather than generic taste. It's the skill the
+security and performance reviewers point to when they say "leave general
+correctness to a code-review skill" — and it returns the favor, flagging
+security/performance leads in one line instead of analyzing them.
+
+**Modes**
+
+| Input | Mode |
+|---|---|
+| GitHub PR URL or number | inline comments + summary via the GitHub MCP server |
+| Branch name, or nothing (uncommitted work) | diff against base, or the working-tree diff |
+
+**Effort levels** — `low` / `medium` (default) / `high` / `max`, controlling how
+much gets reported (not how carefully the diff is read); reuses whatever level
+was last used if none is given.
+
+**Flags** — `--comment` posts findings as inline PR comments; `--fix` applies
+them to the working tree. Neither flag: read-only report, the default. Unlike
+the three read-only reviewers above, this skill *can* write code — but only on
+request, never by default.
+
+**Requirements** — a Ruby on Rails project. PR mode needs the GitHub MCP
+server; `--fix` needs a local checkout of the branch under review. See
+[`SKILL.md`](.claude/skills/code-reviewer/SKILL.md) for the full workflow.
