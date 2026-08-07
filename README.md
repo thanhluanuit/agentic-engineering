@@ -1,13 +1,15 @@
 # agentic-engineering
 
 AI agent skills and rules for engineering workflows — reusable across
-**Claude Code** and **Devin**.
+**Claude Code** and any other agent that reads a root **AGENTS.md** file
+(Codex CLI and Devin today; the adapter works for any agent following that
+same convention).
 
 A **skill** is a self-contained package (instructions + scripts + data) that an
 agent like Claude Code discovers and runs on demand. Drop one into a project and
-the agent knows *when* to use it and *how* to run it. Devin uses the same
-auto-discovery mechanism against a `.devin/` mirror of `.claude/` — see
-[Multi-agent support](#multi-agent-support) below.
+the agent knows *when* to use it and *how* to run it. Skill auto-discovery is
+Claude Code-specific — see [Multi-agent support](#multi-agent-support) below
+for how other agents use the same skills manually.
 
 A **rule** is a markdown instruction file the agent reads automatically — either
 every session or only when it opens a matching file — to keep coding conventions
@@ -18,6 +20,7 @@ auto-loading is Claude-specific.
 
 ```
 agentic-engineering/
+├── AGENTS.md                           # thin adapter for any non-Claude agent — points at .claude/rules/
 ├── .claude/
 │   ├── rules/                          # Rails engineering rules (single source of truth)
 │   │   ├── principles.md               # always-on
@@ -26,15 +29,12 @@ agentic-engineering/
 │   │   ├── performance.md              # loads on Ruby files, views, config
 │   │   ├── security.md                 # loads on app/config/db code
 │   │   └── testing.md                  # loads on spec/test files
-│   └── skills/                         # Claude Code
+│   └── skills/                         # Claude Code-only automation (scripts runnable by hand elsewhere)
 │       ├── owasp-asvs-security         # audit code against OWASP ASVS 4.0.3
 │       ├── owasp-top-10-reviewer       # review code against OWASP Top 10:2025
 │       ├── performance-auditor         # find N+1s, missing indexes, and scaling limits
 │       ├── code-reviewer                # correctness + reuse/simplification review of a PR or diff
 │       └── skill-creator               # scaffold, evaluate, and optimize new skills
-└── .devin/                             # mirrors .claude/ — same rules/, same skills/
-    ├── rules/                          # identical content to .claude/rules/
-    └── skills/                         # identical content to .claude/skills/
 ```
 
 | Skill | What it does |
@@ -57,13 +57,17 @@ consumes it differs:
 | Agent | Entry point | Notes |
 |---|---|---|
 | **Claude Code** | `.claude/rules/`, `.claude/skills/` | Native — rules auto-load by path, skills auto-trigger by description. |
-| **Devin** | `.devin/rules/`, `.devin/skills/` | Native — same structure and auto-discovery mechanism as Claude Code, mirrored under `.devin/`. |
+| **Any AGENTS.md-reading agent** (Codex CLI, Devin, and others following the same convention) | [`AGENTS.md`](AGENTS.md) → `.claude/rules/` | No auto-loading of its own — `AGENTS.md` lists every rule file and when to read it. Skills run manually via their `scripts/`. |
 
-Windsurf is not supported.
+Windsurf is explicitly out of scope — no adapter is maintained for it.
 
-**Using this with Devin** — copy `.devin/rules/` and `.devin/skills/` into
-your project (same as the Claude Code flow below), then fill in
-`technical_stack.md`.
+**Using this with Codex CLI, Devin, or another AGENTS.md-reading agent** —
+copy `.claude/rules/` (and `AGENTS.md`, if your project doesn't already have
+one — merge its rule table in if it does) into your project, then fill in
+`technical_stack.md`. Skills under `.claude/skills/*` don't auto-trigger
+outside Claude Code, but their `scripts/` are plain Python/Bash — invoke them
+by hand per `AGENTS.md`'s runbook, or per each skill's own
+`SKILL.md`/`README.md`.
 
 ---
 
