@@ -33,7 +33,7 @@ agentic-engineering/
 │       ├── owasp-asvs-security         # audit code against OWASP ASVS 4.0.3
 │       ├── owasp-top-10-reviewer       # review code against OWASP Top 10:2025
 │       ├── performance-auditor         # find N+1s, missing indexes, and scaling limits
-│       ├── code-reviewer                # correctness + reuse/simplification review of a PR or diff
+│       ├── code-reviewer               # correctness + reuse/simplification review of a PR or diff
 │       └── skill-creator               # scaffold, evaluate, and optimize new skills
 ```
 
@@ -45,6 +45,10 @@ agentic-engineering/
 | [`code‑reviewer`](.claude/skills/code-reviewer) | Reviews a PR or diff for correctness bugs and reuse/simplification/efficiency cleanups, checked against the repo's own rules. Effort levels + optional inline PR comments or applied fixes; read-only unless asked. |
 | [`skill‑creator`](.claude/skills/skill-creator) | Scaffolds, refines, and optimizes skills, with evals to benchmark what works. |
 
+**Using them in your own project** — copy the `.claude/skills/<name>`
+directories you want into your project's `.claude/skills/`. Claude Code
+auto-discovers them from each `SKILL.md`'s `description` frontmatter — no
+config or registration step needed.
 
 ---
 
